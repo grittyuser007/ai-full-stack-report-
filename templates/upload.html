@@ -1,0 +1,183 @@
+</html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Report Generation</title>
+    <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Essay.svg/20px-Essay.svg.png"
+        type="image/png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #fff;
+            overflow: hidden;
+            /* Prevents scrolling */
+        }
+
+        /* Moving gradient background */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, #4caf50, #81c784, #ffcc80, #ff7043, #4caf50);
+            background-size: 300% 300%;
+            animation: gradientMove 12s infinite linear;
+            z-index: -1;
+        }
+
+        @keyframes gradientMove {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        header {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        header p {
+            font-size: 1.2rem;
+            margin-top: 10px;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .time {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+        }
+
+        .form-container {
+            margin-top: 100px;
+            padding: 20px;
+            width: 60%;
+            max-width: 600px;
+            margin: 100px auto;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        textarea,
+        input[type="file"],
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        textarea {
+            resize: none;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="file"] {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        button {
+            background: #ff7043;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.4);
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: #ff5722;
+            transform: translateY(-2px);
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .branding {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .branding img {
+            height: 40px;
+            margin: 0 15px;
+        }
+
+        .branding a {
+            color: #fff;
+            font-size: 1rem;
+            text-decoration: none;
+        }
+
+        .branding a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('time').innerText = timeString;
+        }
+
+        setInterval(updateTime, 1000);
+    </script>
+</head>
+
+<body>
+    <div class="time" id="time"></div>
+    <header>
+        <h1>AI Report Generation</h1>
+        <p>Create insightful reports powered by Llama Index and Groq API.</p>
+    </header>
+
+    <div class="form-container">
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <textarea name="prompt" rows="4" placeholder="Enter your prompt here..." required></textarea>
+            <input type="file" name="file">
+            <button type="submit">Generate Report</button>
+        </form>
+    </div>
+
+    <div class="branding">
+        <a href="https://llamaindex.ai" target="_blank">
+            <img src="https://cdn.brandfetch.io/id6a4s3gXI/w/400/h/400/theme/dark/icon.jpeg?c=1bfwsmEH20zzEfSNTed"
+                alt="Llama Index">
+        </a>
+        <a href="https://groq.com" target="_blank">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Groq_logo.svg" alt="Groq API">
+        </a>
+    </div>
+</body>
+
+</html>
