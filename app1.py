@@ -58,19 +58,13 @@ def generate_pdf(prompt, file_content, groq_response, df):
     elements = []
 
     # Add title and prompt
-    elements.append(Paragraph("AI Report", styles['Title']))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph("User Prompt:", styles['Heading2']))
-    elements.append(Paragraph(prompt, styles['BodyText']))
+    elements.append(Paragraph("FULL STACK REPORT GENERATING AGENT", styles['Title']))
     elements.append(Spacer(1, 12))
 
-    # Add file content
-    elements.append(Paragraph("Uploaded Content:", styles['Heading2']))
-    elements.append(Paragraph(file_content, styles['BodyText']))
-    elements.append(Spacer(1, 12))
+
 
     # Add Groq API response
-    elements.append(Paragraph("Groq API Response:", styles['Heading2']))
+
     elements.append(Paragraph(groq_response, styles['BodyText']))
     elements.append(Spacer(1, 12))
 
