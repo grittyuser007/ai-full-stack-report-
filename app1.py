@@ -4,14 +4,14 @@ import pandas as pd
 import fitz  # PyMuPDF
 from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, StorageContext
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
-from groq import Groq
+from llama_index.llms.groq import Groq
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+import matplotlib
+matplotlib.use('Agg')  # Use the Agg backend for matplotlib
 import matplotlib.pyplot as plt
 
 # Load environment variables from .env file
@@ -22,85 +22,89 @@ app = Flask(__name__)
 CORS(app)
 
 # Groq API configuration
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # Load API key from environment variable
-client = Groq(api_key=GROQ_API_KEY)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = "llama3-70b-8192"  # Specify the model to use
 
-# Ensure necessary directories exist
-index_storage_dir = 'index_storage'
-docstore_path = os.path.join(index_storage_dir, 'docstore.json')
+# Initialize Groq client
+groq_client = Groq(model=GROQ_MODEL, api_key=GROQ_API_KEY)
 
-if not os.path.exists(index_storage_dir):
-    os.makedirs(index_storage_dir)
-
-if not os.path.exists(docstore_path):
-    with open(docstore_path, 'w') as f:
-        json.dump({}, f)
-
+# Configure upload folder and allowed file extensions
 UPLOAD_FOLDER = 'uploads'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'csv', 'xlsx', 'json'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
 
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'csv', 'xlsx', 'json'}
+# Ensure required directories exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Utility function: Check allowed file extensions
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def use_groq_chat_api(model, messages):
-    """Call the Groq Chat API."""
+# Function: Query Groq API
+def use_groq_chat_api(prompt):
     try:
-        chat_completion = client.chat.completions.create(messages=messages, model=model)
-        return chat_completion.choices[0].message.content
+        response = groq_client.complete(prompt)
+        # Extract the text content from the response object
+        return response.text.strip()
     except Exception as e:
-        print(f"Error using Groq Chat API: {e}")
-        return "Error occurred while processing the data with Groq API."
+        return f"Error occurred while processing the data with Groq API: {e}"
 
-def generate_pdf(index_response, groq_response, df):
+# Function: Generate PDF with file content and Groq API response
+def generate_pdf(prompt, file_content, groq_response, df):
     pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], 'report.pdf')
     doc = SimpleDocTemplate(pdf_path, pagesize=letter)
     styles = getSampleStyleSheet()
     elements = []
 
+    # Add title and prompt
     elements.append(Paragraph("AI Report", styles['Title']))
     elements.append(Spacer(1, 12))
-    elements.append(Paragraph("Llama Index Response:", styles['Heading2']))
-    elements.append(Paragraph(index_response, styles['BodyText']))
+    elements.append(Paragraph("User Prompt:", styles['Heading2']))
+    elements.append(Paragraph(prompt, styles['BodyText']))
     elements.append(Spacer(1, 12))
+
+    # Add file content
+    elements.append(Paragraph("Uploaded Content:", styles['Heading2']))
+    elements.append(Paragraph(file_content, styles['BodyText']))
+    elements.append(Spacer(1, 12))
+
+    # Add Groq API response
     elements.append(Paragraph("Groq API Response:", styles['Heading2']))
     elements.append(Paragraph(groq_response, styles['BodyText']))
     elements.append(Spacer(1, 12))
 
+    # Add a plot if DataFrame contains numeric data
     if not df.empty:
-        # Ensure numeric data is available for plotting
         numeric_df = df.select_dtypes(include=['number'])
-        if numeric_df.empty:
-            print("No numeric data to plot.")
-        else:
+        if not numeric_df.empty:
             plot_path = os.path.join(app.config['UPLOAD_FOLDER'], 'plot.png')
             numeric_df.plot(kind='bar', figsize=(8, 6))
-            plt.title("Bar Plot")
+            plt.title("Bar Plot of Numeric Data")
             plt.savefig(plot_path)
             plt.close()
-
-            # Add the plot to the PDF
             elements.append(Image(plot_path, width=400, height=300))
 
     doc.build(elements)
     return pdf_path
 
+# Route: File upload and processing
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
+        return jsonify({"error": "No file uploaded"}), 400
     file = request.files['file']
     if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+        return jsonify({"error": "No file selected"}), 400
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
+        # **Extract the prompt from the form data**
+        prompt = request.form.get('prompt', '')  # Default to empty string if not provided
+
+        # Process file based on type
         file_extension = filename.rsplit(".", 1)[1].lower()
         try:
             if file_extension == "csv":
@@ -120,46 +124,35 @@ def upload_file():
             else:
                 return jsonify({"error": "Unsupported file type"}), 400
         except Exception as e:
-            return jsonify({"error": f"Error parsing file: {e}"}), 400
+            return jsonify({"error": f"Error reading file: {str(e)}"}), 400
 
-        file_content = df.to_string()
+        # Convert file content to string
+        file_content = df.to_string(index=False)
 
+        # **Combine the prompt and file content**
+        combined_content = f"{prompt}\n\n{file_content}"
+
+        # Log the prompt and combined content for debugging
+        print("User Prompt:\n", prompt)
+        print("Combined Content Sent to Groq API:\n", combined_content)
+
+        # Call Groq API
         try:
-            groq_response = use_groq_chat_api(
-                model="llama3-8b-8192",
-                messages=[{"role": "user", "content": file_content}],
-            )
+            groq_response = use_groq_chat_api(combined_content)
         except Exception as e:
-            return jsonify({"error": f"Error querying Groq API: {e}"}), 400
+            return jsonify({"error": f"Groq API error: {str(e)}"}), 500
 
-        pdf_path = generate_pdf(file_content, groq_response, df)
+        # Generate and return PDF report
+        pdf_path = generate_pdf(prompt, file_content, groq_response, df)
         return send_file(pdf_path, as_attachment=True, download_name='report.pdf')
-    else:
-        return jsonify({"error": "File type not allowed"}), 400
 
-@app.route('/generate-report', methods=['POST'])
-def generate_report():
-    data = request.json
-    query = data.get('query')
+    return jsonify({"error": "Invalid file type"}), 400
 
-    storage_context = StorageContext.from_defaults(persist_dir=index_storage_dir)
-    index = VectorStoreIndex(storage_context=storage_context)
-    index_response = index.query(query)
-
-    groq_response = use_groq_chat_api(
-        model="llama3-8b-8192",
-        messages=[
-            {"role": "user", "content": query},
-            {"role": "assistant", "content": str(index_response)},
-        ],
-    )
-
-    pdf_path = generate_pdf(str(index_response), groq_response, pd.DataFrame())
-    return send_file(pdf_path, as_attachment=True, download_name='report.pdf')
-
+# Route: Home
 @app.route("/")
 def index():
     return render_template("upload.html")
 
+# Main entry point
 if __name__ == "__main__":
     app.run(debug=True)
