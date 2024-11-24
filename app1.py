@@ -61,23 +61,39 @@ def generate_pdf(prompt, file_content, groq_response, df):
     elements.append(Paragraph("FULL STACK REPORT GENERATING AGENT", styles['Title']))
     elements.append(Spacer(1, 12))
 
-
-
     # Add Groq API response
-
     elements.append(Paragraph(groq_response, styles['BodyText']))
     elements.append(Spacer(1, 12))
 
-    # Add a plot if DataFrame contains numeric data
+    # Add plots if DataFrame contains numeric data
     if not df.empty:
         numeric_df = df.select_dtypes(include=['number'])
         if not numeric_df.empty:
-            plot_path = os.path.join(app.config['UPLOAD_FOLDER'], 'plot.png')
+            # Bar plot
+            plot_path_bar = os.path.join(app.config['UPLOAD_FOLDER'], 'plot_bar.png')
             numeric_df.plot(kind='bar', figsize=(8, 6))
             plt.title("Bar Plot of Numeric Data")
-            plt.savefig(plot_path)
+            plt.savefig(plot_path_bar)
             plt.close()
-            elements.append(Image(plot_path, width=400, height=300))
+            elements.append(Image(plot_path_bar, width=400, height=300))
+            elements.append(Spacer(1, 12))
+
+            # Pie chart (example for first numeric column)
+            plot_path_pie = os.path.join(app.config['UPLOAD_FOLDER'], 'plot_pie.png')
+            numeric_df.iloc[:, 0].plot(kind='pie', figsize=(8, 6), autopct='%1.1f%%')
+            plt.title("Pie Chart of First Numeric Column")
+            plt.savefig(plot_path_pie)
+            plt.close()
+            elements.append(Image(plot_path_pie, width=400, height=300))
+            elements.append(Spacer(1, 12))
+
+            # Histogram
+            plot_path_hist = os.path.join(app.config['UPLOAD_FOLDER'], 'plot_hist.png')
+            numeric_df.plot(kind='hist', figsize=(8, 6))
+            plt.title("Histogram of Numeric Data")
+            plt.savefig(plot_path_hist)
+            plt.close()
+            elements.append(Image(plot_path_hist, width=400, height=300))
 
     doc.build(elements)
     return pdf_path
