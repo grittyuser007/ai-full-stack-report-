@@ -1,3 +1,30 @@
-flask
-llama-index
-reportlab
+Programming Language
+Python (v3.10.11): A versatile language widely used in data analysis, machine learning, and web development.
+
+Frameworks and Libraries
+Flask: A micro web framework for handling web requests and responses.
+Jinja2: A templating language for designing HTML templates, used by Flask.
+Pandas: For data manipulation and analysis, offering flexible data structures.
+Matplotlib: For creating static, animated, and interactive visualizations.
+
+Additional Python Libraries
+PyYAML: Parses YAML files for data serialization.
+NumPy: Fundamental package for numerical computation.
+Scikit-learn: Supports machine learning and data mining tasks.
+SciPy: Extends NumPy with additional mathematical functions.
+Seaborn: High-level interface for statistical graphics.
+NLTK: Tools for working with human language data.
+NetworkX: For creating and analyzing complex networks.
+Lxml: Processes XML and HTML documents.
+Requests: Simplifies sending HTTP requests.
+Plotly: Generates interactive data visualizations.
+OpenPyXL: Reads and writes Excel files.
+Pillow: Adds image processing capabilities.
+Werkzeug: Utility library for WSGI web applications.
+Click: For building command-line interfaces.
+SQLAlchemy: A powerful SQL toolkit and ORM library.
+
+Miscellaneous Libraries: pyparsing, pytz, six, smmap, sympy, wheel, wrapt for parsing, timezone handling, and other utilities.
+
+Development Tools
+PyCharm 2024.3 Professional Edition: The preferred Integrated Development Environment (IDE) for this project.
