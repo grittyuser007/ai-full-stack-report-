@@ -14,7 +14,7 @@ import matplotlib
 matplotlib.use('Agg')  # Use the Agg backend for matplotlib
 import matplotlib.pyplot as plt
 
-# Load environment variables from .env file
+# Load environment variables from .env 
 load_dotenv()
 
 # Initialize Flask app
